@@ -32,6 +32,8 @@ stages:
   jobs:
     - job: SonarAnalysis
       steps:
+        - checkout: self
+
         - task: SonarQubePrepare@7
           displayName: 'Prepare SonarQube'
           inputs:
@@ -73,8 +75,14 @@ stages:
               -p 5433:5432 \
               postgres:16-alpine
 
-            echo "Waiting for DB..."
-            sleep 15
+            echo "Waiting for PostgreSQL to be ready..."
+
+            for i in {1..10}
+            do
+              PGPASSWORD=testpass pg_isready -h localhost -p 5433 -U postgres && break
+              echo "Waiting..."
+              sleep 5
+            done
 
             echo "Running init.sql..."
             PGPASSWORD=testpass psql -h localhost -p 5433 -U postgres -d validate_db -f init.sql
@@ -83,8 +91,8 @@ stages:
             PGPASSWORD=testpass psql -h localhost -p 5433 -U postgres -d validate_db -f seed.sql
 
             echo "Cleaning up..."
-            docker stop pg-validate
-            docker rm pg-validate
+            docker stop pg-validate || true
+            docker rm pg-validate || true
           displayName: 'Validate SQL Scripts'
 
 
@@ -98,6 +106,8 @@ stages:
   jobs:
     - job: BuildAndPush
       steps:
+        - checkout: self
+
         - task: Docker@2
           displayName: 'Build Image'
           inputs:
@@ -133,4 +143,4 @@ stages:
         - script: |
             echo "Deploying database..."
             echo "Done!"
-          displayName: 'Deploy Step'
+          displayName: 'Deploy Step'+
