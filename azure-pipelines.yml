@@ -45,13 +45,9 @@ stages:
             cliProjectName: 'SSP Books Database'
             cliSources: '.'
             extraProperties: |
-              sonar.sources=.
-              sonar.inclusions=**/*.sql
-              sonar.sourceEncoding=UTF-8
-              sonar.branch.name=
-              sonar.pullrequest.key=
-              sonar.pullrequest.branch=
-              sonar.pullrequest.base=
+             sonar.sources=.
+             sonar.inclusions=**/*.sql
+             sonar.sourceEncoding=UTF-8
 
         - task: SonarQubeAnalyze@7
 
