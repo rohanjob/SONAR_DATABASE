@@ -46,31 +46,25 @@ stages:
 # =========================
 # Stage 2: SonarQube
 # =========================
-- stage: CodeQuality
-  displayName: SonarQube Analysis
-  dependsOn: Setup
-  jobs:
-  - job: Sonar
-    steps:
-    - task: SonarQubePrepare@6
-      inputs:
-        SonarQube: '$(sonarQubeServiceConnection)'
-        scannerMode: 'CLI'
-        configMode: 'manual'
-        cliProjectKey: '$(sonarProjectKey)'
-        cliProjectName: '$(sonarProjectName)'
-        cliSources: '.'
-        extraProperties: |
-          sonar.language=plsql
-          sonar.sources=.
-          sonar.inclusions=**/*.sql
-          sonar.sourceEncoding=UTF-8
+-- task: SonarQubePrepare@5
+  inputs:
+    SonarQube: '$(sonarQubeServiceConnection)'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: '$(sonarProjectKey)'
+    cliProjectName: '$(sonarProjectName)'
+    cliSources: '.'
+    extraProperties: |
+      sonar.language=plsql
+      sonar.sources=.
+      sonar.inclusions=**/*.sql
+      sonar.sourceEncoding=UTF-8
 
-    - task: SonarQubeAnalyze@6
+- task: SonarQubeAnalyze@5
 
-    - task: SonarQubePublish@6
-      inputs:
-        pollingTimeoutSec: '300'
+- task: SonarQubePublish@5
+  inputs:
+    pollingTimeoutSec: '300'
 
 # =========================
 # Stage 3: Validate SQL
