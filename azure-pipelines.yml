@@ -1,9 +1,3 @@
-# =============================================
-
-# SSP Books Database - Azure DevOps Pipeline (UPDATED)
-
-# =============================================
-
 trigger:
 branches:
 include:
@@ -24,74 +18,34 @@ imageRepository: 'ssp-books-database'
 containerRegistry: 'sspbooksacr.azurecr.io'
 dockerfilePath: 'Dockerfile'
 tag: '$(Build.BuildId)'
-sonarQubeServiceConnection: 'Sonar'
+sonarQubeServiceConnection: 'SonarQube-Service'
 sonarProjectKey: 'ssp_books_database'
 sonarProjectName: 'SSP Books Database'
 
 stages:
 
-# =============================================
-
-# Stage 0: Install Required Software
-
-# =============================================
-
 * stage: Setup
-  displayName: 'Install Required Tools'
+  displayName: Install Tools
   jobs:
 
   * job: InstallTools
-    displayName: 'Install Docker, PostgreSQL Client, CLI Tools'
     steps:
 
     * script: |
-      echo "========================================="
-      echo "Installing required software..."
-      echo "========================================="
-
       sudo apt-get update
-
-      # Install Docker
-
-      sudo apt-get install -y docker.io
-      sudo systemctl start docker
-      sudo systemctl enable docker
-
-      # Install PostgreSQL client
-
-      sudo apt-get install -y postgresql-client
-
-      # Install curl & unzip (commonly required)
-
-      sudo apt-get install -y curl unzip
-
-      # Install Azure CLI
-
+      sudo apt-get install -y docker.io postgresql-client curl unzip
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-      # Verify installations
 
       docker --version
       psql --version
       az --version
-
-      echo "========================================="
-      echo "All tools installed successfully!"
-      echo "========================================="
-      displayName: 'Install Tools'
-
-# =============================================
-
-# Stage 1: Code Quality Analysis with SonarQube
-
-# =============================================
+      displayName: Install Required Tools
 
 * stage: CodeQuality
-  displayName: 'SonarQube Analysis'
   dependsOn: Setup
   jobs:
 
-  * job: SonarAnalysis
+  * job: Sonar
     steps:
 
     * task: SonarQubePrepare@6
@@ -106,7 +60,6 @@ stages:
       sonar.language=plsql
       sonar.sources=.
       sonar.inclusions=**/*.sql
-      sonar.sourceEncoding=UTF-8
 
     * task: SonarQubeAnalyze@6
 
@@ -114,14 +67,7 @@ stages:
       inputs:
       pollingTimeoutSec: '300'
 
-# =============================================
-
-# Stage 2: Validate SQL Scripts
-
-# =============================================
-
 * stage: Validate
-  displayName: 'Validate SQL Scripts'
   dependsOn: CodeQuality
   jobs:
 
@@ -129,12 +75,6 @@ stages:
     steps:
 
     * script: |
-      echo "========================================="
-      echo "Validating SQL scripts..."
-      echo "========================================="
-
-      # Run PostgreSQL container
-
       docker run -d --name pg-validate 
       -e POSTGRES_PASSWORD=testpass 
       -e POSTGRES_DB=validate_db 
@@ -143,33 +83,19 @@ stages:
 
       sleep 10
 
-      echo "Testing init.sql..."
       PGPASSWORD=testpass psql -h localhost -p 5433 -U postgres -d validate_db -f init.sql
-
-      echo "Testing seed.sql..."
       PGPASSWORD=testpass psql -h localhost -p 5433 -U postgres -d validate_db -f seed.sql
-
-      echo "========================================="
-      echo "SQL validation successful!"
-      echo "========================================="
 
       docker stop pg-validate
       docker rm pg-validate
-      displayName: 'Validate SQL'
-
-# =============================================
-
-# Stage 3: Build & Push Docker Image
-
-# =============================================
+      displayName: Validate SQL
 
 * stage: Build
-  displayName: 'Build & Push Docker Image'
   dependsOn: Validate
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
 
-  * job: BuildAndPush
+  * job: BuildPush
     steps:
 
     * task: Docker@2
@@ -191,27 +117,12 @@ stages:
       $(tag)
       latest
 
-# =============================================
-
-# Stage 4: Deploy
-
-# =============================================
-
 * stage: Deploy
-  displayName: 'Deploy Database'
   dependsOn: Build
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
 
-  * deployment: DeployDB
-    environment: 'production'
-    strategy:
-    runOnce:
-    deploy:
+  * job: DeployDB
     steps:
-    - script: |
-    echo "========================================="
-    echo "Deploying database migrations..."
-    echo "Deployment completed!"
-    echo "========================================="
-    displayName: 'Deploy DB'
+
+    * script: echo "Database deployment completed"
