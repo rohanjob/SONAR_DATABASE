@@ -63,15 +63,13 @@ stages:
               sonar.sourceEncoding=UTF-8
 
         # Required for SonarQube Community Edition to bypass branch analysis restriction
-        - task: PowerShell@2
+        - task: Bash@3
           displayName: 'Remove branch name for Community Edition'
           inputs:
             targetType: 'inline'
             script: |
-              $params = $env:SONARQUBE_SCANNER_PARAMS | ConvertFrom-Json
-              $params.PSObject.Properties.Remove('sonar.branch.name')
-              $newParams = $params | ConvertTo-Json -Compress
-              Write-Host "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$newParams"
+              NEW_PARAMS=$(python3 -c "import os, json; p = json.loads(os.environ.get('SONARQUBE_SCANNER_PARAMS', '{}')); p.pop('sonar.branch.name', None); print(json.dumps(p))")
+              echo "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$NEW_PARAMS"
 
         - task: SonarQubeAnalyze@8
 
