@@ -9,7 +9,7 @@ pool:
   name: 'ShivaRam'
 
 variables:
-  dockerRegistryServiceConnection: 'ssp-books-acr'
+  dockerRegistryServiceConnection: 'sspbooksacr'
   imageRepository: 'ssp-books-database'
   containerRegistry: 'sspbooksacr.azurecr.io'
   dockerfilePath: 'Dockerfile'
