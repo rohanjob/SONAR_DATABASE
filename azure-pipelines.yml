@@ -50,16 +50,14 @@ stages:
 
         - task: SonarQubePrepare@8
           inputs:
-            SonarQube: '$(sonarQubeServiceConnection)'
+            SonarQube: 'SonarQube-Service'
             scannerMode: 'CLI'
             configMode: 'manual'
-            cliProjectKey: '$(sonarProjectKey)'
-            cliProjectName: '$(sonarProjectName)'
+            cliProjectKey: 'ssp_books_database'
+            cliProjectName: 'SSP Books Database'
             cliSources: '.'
             extraProperties: |
-              sonar.language=plsql
               sonar.sources=.
-              sonar.inclusions=**/*.sql
               sonar.sourceEncoding=UTF-8
 
         # Required for SonarQube Community Edition to bypass branch analysis restriction
@@ -72,8 +70,10 @@ stages:
               echo "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$NEW_PARAMS"
 
         - task: SonarQubeAnalyze@8
+          displayName: 'Run Code Analysis'
 
         - task: SonarQubePublish@8
+          displayName: 'Publish Quality Gate Result'
           inputs:
             pollingTimeoutSec: '300'
 
